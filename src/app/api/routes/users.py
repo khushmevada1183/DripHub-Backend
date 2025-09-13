@@ -1,8 +1,9 @@
+# moved from app.api.api_v1.routers.users
 from fastapi import APIRouter, Depends
 from app.core.exceptions import HTTPException
 from sqlalchemy.orm import Session
 from app.db.session import get_db
-from app import crud, schemas
+from app import schemas
 from app.core.supabase_auth import get_current_user_from_supabase
 
 router = APIRouter()
