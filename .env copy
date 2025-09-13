@@ -1,3 +1,0 @@
-DATABASE_URL=postgresql://postgres:khush@localhost:5432/DripHub
-SECRET_KEY=driphub-super-secret-jwt-key-2025
-ACCESS_TOKEN_EXPIRE_MINUTES=30
