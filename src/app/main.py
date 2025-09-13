@@ -4,10 +4,15 @@ from app.core.exceptions import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
-from app.api.api_v1.api import api_router
+from app.api.routes.api import api_router
 from app.db import session
 from app.db.base import Base
 from app.core.config import settings
+from app.core.supabase_client import supabase_client
+from app.core.logging_config import add_app_loggers, get_logger
+
+add_app_loggers()
+logger = get_logger()
 
 app = FastAPI(title="DripHub Backend")
 
@@ -47,10 +52,20 @@ app.add_middleware(
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 @app.on_event("startup")
-def startup_event():
+async def startup_event():
     # create database tables (for SQLite demo)
     engine = session.engine
     Base.metadata.create_all(bind=engine)
+
+    # Supabase health check (best-effort)
+    if settings.SUPABASE_URL:
+        try:
+            info = await supabase_client.health_check()
+            logger.info("supabase.health", **info)
+        except Exception as e:
+            logger.warning("supabase.unreachable", error=str(e))
+    else:
+        logger.info("supabase.disabled")
 
 @app.get("/")
 def read_root():
