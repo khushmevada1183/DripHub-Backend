@@ -4,7 +4,7 @@ from app.core.exceptions import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
-from app.api.api_v1.api import api_router
+from app.api.routes.api import api_router
 from app.db import session
 from app.db.base import Base
 from app.core.config import settings

@@ -93,10 +93,10 @@ cp .env.example .env
 ### 5️⃣ Launch the Server
 ```bash
 # Development server with hot reload
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --app-dir src --reload --port 8000
 
 # Production server
-uvicorn app.main:app --host 0.0.0.0 --port 8000
+uvicorn app.main:app --app-dir src --host 0.0.0.0 --port 8000
 ```
 
 🎉 **Your API is now running at** → http://localhost:8000
