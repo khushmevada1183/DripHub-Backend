@@ -10,3 +10,4 @@ httpx
 psycopg2-binary
 pytest
 gunicorn>=20.1.0
+structlog>=23.0.0
