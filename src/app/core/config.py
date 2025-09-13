@@ -14,5 +14,9 @@ class Settings:
     SUPABASE_SERVICE_ROLE_KEY: str = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
     SUPABASE_ANON_KEY: str = os.getenv("SUPABASE_ANON_KEY", "")
     LEGACY_JWT_SECRET: str = os.getenv("LEGACY_JWT_SECRET", "")
+    # When true, skip automatic DB table creation on application startup.
+    # Useful in hosted environments where the DB is managed separately
+    # and may be temporarily unreachable during deploys.
+    SKIP_DB_INIT: bool = os.getenv("SKIP_DB_INIT", "false").lower() in ("1", "true", "yes")
 
 settings = Settings()

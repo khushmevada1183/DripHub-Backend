@@ -54,8 +54,18 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 @app.on_event("startup")
 async def startup_event():
     # create database tables (for SQLite demo)
-    engine = session.engine
-    Base.metadata.create_all(bind=engine)
+    # This is optional and can be skipped in environments where the DB
+    # is managed separately or may be unreachable during deploys.
+    if not settings.SKIP_DB_INIT:
+        engine = session.engine
+        try:
+            Base.metadata.create_all(bind=engine)
+        except Exception as e:
+            # Log the error but do not prevent the application from
+            # starting. In production, prefer running migrations separately.
+            logger.warning("db.init_failed", error=str(e))
+    else:
+        logger.info("db.init_skipped")
 
     # Supabase health check (best-effort)
     if settings.SUPABASE_URL:
