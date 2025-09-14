@@ -8,7 +8,8 @@ class Order(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    total = Column(Float, default=0.0)
+    # actual DB column is `total_amount`
+    total = Column('total_amount', Float, default=0.0)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User")
