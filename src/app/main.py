@@ -80,3 +80,14 @@ async def startup_event():
 @app.get("/")
 def read_root():
     return {"message": "DripHub backend is running"}
+
+
+@app.get("/health")
+def health():
+    """Lightweight health endpoint for readiness/liveness checks.
+
+    This intentionally avoids touching the database so the process can
+    report healthy even when the DB is unreachable (migrations are
+    performed separately via Alembic).
+    """
+    return {"status": "ok"}
