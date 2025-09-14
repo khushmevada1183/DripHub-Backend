@@ -18,5 +18,8 @@ class Settings:
     # Useful in hosted environments where the DB is managed separately
     # and may be temporarily unreachable during deploys.
     SKIP_DB_INIT: bool = os.getenv("SKIP_DB_INIT", "false").lower() in ("1", "true", "yes")
+    # When true, include the DB exception message in /health/db responses
+    # for debugging. Should NOT be enabled in production long-term.
+    DB_HEALTH_VERBOSE: bool = os.getenv("DB_HEALTH_VERBOSE", "false").lower() in ("1", "true", "yes")
 
 settings = Settings()
