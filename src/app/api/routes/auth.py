@@ -8,6 +8,8 @@ from app.core.security import create_access_token
 from datetime import timedelta
 from app.core.config import settings
 from app.db.repositories.crud_user import authenticate_user, create_user, get_user_by_email
+import logging
+from sqlalchemy.exc import SQLAlchemyError
 
 router = APIRouter()
 
@@ -24,6 +26,11 @@ def register(user_in: schemas.user.UserCreate, db: Session = Depends(get_db)):
     existing = get_user_by_email(db, user_in.email)
     if existing:
         raise HTTPException(status_code=400, message="Email already registered")
-    user = create_user(db, user_in)
+    try:
+        user = create_user(db, user_in)
+    except SQLAlchemyError as e:
+        logging.exception("Failed to create user due to database error")
+        # Return a 503 Service Unavailable so clients understand this is an infrastructure issue
+        raise HTTPException(status_code=503, message="Database unavailable, please try again later")
     access_token = create_access_token(subject=user.email, expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
     return schemas.user.UserWithToken(user=user, access_token=access_token, token_type="bearer")
