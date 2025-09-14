@@ -63,6 +63,26 @@ class SupabaseClient:
             r = await client.post(f"{self.url}/auth/v1/token?grant_type=password", json=payload, headers=headers, timeout=10.0)
         return {"status_code": r.status_code, "json": r.json()}
 
+    async def admin_create_user(self, email: str, password: str, email_confirm: bool = False) -> dict:
+        """Create a user via the Supabase Admin API using the service_role key.
+
+        When `email_confirm` is True, the created user will be marked as confirmed
+        and will not require email verification.
+        """
+        if not self.url:
+            raise RuntimeError("Supabase URL not configured")
+        if not self.service_role:
+            raise RuntimeError("Supabase service role key not configured")
+
+        headers = {"apikey": self.service_role, "Authorization": f"Bearer {self.service_role}", "Content-Type": "application/json"}
+        payload = {"email": email, "password": password}
+        if email_confirm:
+            payload["email_confirm"] = True
+
+        async with httpx.AsyncClient() as client:
+            r = await client.post(f"{self.url}/auth/v1/admin/users", json=payload, headers=headers, timeout=10.0)
+        return {"status_code": r.status_code, "json": r.json()}
+
     async def health_check(self) -> dict:
         """Basic health check for the Supabase URL. Returns a dict with status info.
 
