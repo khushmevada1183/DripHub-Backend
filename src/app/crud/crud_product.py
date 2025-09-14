@@ -2,7 +2,14 @@ from sqlalchemy.orm import Session
 from app import models, schemas
 
 def create_product(db: Session, product_in: schemas.product.ProductCreate):
-    db_obj = models.product.Product(title=product_in.title, description=product_in.description, price=product_in.price)
+    # product_in still uses legacy fields (title, price) for external compatibility.
+    # Map those to the new products table columns (product_name, real_price, current_price).
+    db_obj = models.product.Product(
+        product_name=product_in.title,
+        description=product_in.description,
+        real_price=product_in.price,
+        current_price=product_in.price,
+    )
     db.add(db_obj)
     db.commit()
     db.refresh(db_obj)

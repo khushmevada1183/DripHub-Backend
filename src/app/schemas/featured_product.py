@@ -3,18 +3,7 @@ from typing import Optional
 from datetime import datetime
 
 
-class ProductBase(BaseModel):
-    # keep minimal for create operations (existing code uses title/price)
-    title: str
-    description: Optional[str] = None
-    price: float
-
-
-class ProductCreate(ProductBase):
-    pass
-
-
-class ProductRead(BaseModel):
+class FeaturedProduct(BaseModel):
     id: int
     product_name: str
     category: Optional[str] = None
