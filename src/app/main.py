@@ -91,3 +91,21 @@ def health():
     performed separately via Alembic).
     """
     return {"status": "ok"}
+
+
+@app.get("/health/db")
+def health_db():
+    """DB connectivity check. Returns 200 if a simple query succeeds, 503 otherwise."""
+    try:
+        # lightweight check
+        db = session.SessionLocal()
+        try:
+            # Use a raw SQL to avoid ORM model imports and keep this check minimal
+            db.execute("SELECT 1")
+            return {"status": "ok", "db": "reachable"}
+        finally:
+            db.close()
+    except Exception as e:
+        logger.warning("db.health_unreachable", error=str(e))
+        # Keep response lightweight and machine-readable
+        return JSONResponse(status_code=503, content={"status": "unavailable", "db": "unreachable"})
