@@ -50,13 +50,16 @@ jobs:
   deploy-to-render:
     needs: test-and-migrate
     runs-on: ubuntu-latest
-    if: ${{ secrets.RENDER_SERVICE_ID && secrets.RENDER_API_KEY }}
     steps:
-      - name: Trigger Render deploy
+      - name: Trigger Render deploy (if secrets present)
         env:
           RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         run: |
+          if [ -z "${RENDER_SERVICE_ID:-}" ] || [ -z "${RENDER_API_KEY:-}" ]; then
+            echo "Render secrets not provided; skipping deploy"
+            exit 0
+          fi
           echo "Triggering Render deploy for service $RENDER_SERVICE_ID"
           curl -s -X POST \
             -H "Authorization: Bearer $RENDER_API_KEY" \
