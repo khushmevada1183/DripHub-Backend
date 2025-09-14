@@ -23,7 +23,7 @@ def get_cart(db: Session = Depends(get_db), user_id: int = Depends(_get_user_id_
     items = db.execute(
         """
         SELECT ci.id, ci.product_id, ci.quantity, ci.price_at_add, ci.metadata,
-               p.id AS p_id, p.title AS p_title, p.description AS p_description, p.price AS p_price
+               p.id AS p_id, p.name AS p_title, p.description AS p_description, p.price AS p_price
         FROM public.cart_items ci
         LEFT JOIN public.products p ON p.id = ci.product_id
         WHERE ci.cart_id = %s
