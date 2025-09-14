@@ -23,7 +23,12 @@ fileConfig(config.config_file_name)
 # If DATABASE_URL is set in the environment, use it. Otherwise rely on ini.
 database_url = os.getenv("DATABASE_URL")
 if database_url:
-    config.set_main_option("sqlalchemy.url", database_url)
+    # configparser (used by alembic.Config) treats '%' as interpolation
+    # markers which will raise ValueError for percent-encoded passwords
+    # (for example 'pass%40word'). Escape percent signs by doubling
+    # them so the URL can be safely stored in the config.
+    safe_database_url = database_url.replace('%', '%%')
+    config.set_main_option("sqlalchemy.url", safe_database_url)
 
 # Import your models' MetaData object here for 'autogenerate' support
 try:
