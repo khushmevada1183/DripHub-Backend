@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from app.api.routes.api import api_router
 from app.db import session
+from sqlalchemy import text
 from app.db.base import Base
 from app.core.config import settings
 from app.core.supabase_client import supabase_client
@@ -101,7 +102,8 @@ def health_db():
         db = session.SessionLocal()
         try:
             # Use a raw SQL to avoid ORM model imports and keep this check minimal
-            db.execute("SELECT 1")
+            # SQLAlchemy 2.x requires textual SQL to be wrapped with text(...)
+            db.execute(text("SELECT 1"))
             return {"status": "ok", "db": "reachable"}
         finally:
             db.close()

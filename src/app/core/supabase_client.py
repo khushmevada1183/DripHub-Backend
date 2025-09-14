@@ -28,6 +28,41 @@ class SupabaseClient:
             raise httpx.HTTPStatusError("Invalid token", request=r.request, response=r)
         return r.json()
 
+    async def signup(self, email: str, password: str) -> dict:
+        """Sign up a user in Supabase and return the response JSON (may include an access token/session).
+
+        Docs: POST /auth/v1/signup
+        """
+        if not self.url:
+            raise RuntimeError("Supabase URL not configured")
+        apikey = self.anon_key or self.service_role
+        if not apikey:
+            raise RuntimeError("Supabase API key not configured")
+
+        headers = {"apikey": apikey, "Content-Type": "application/json"}
+        payload = {"email": email, "password": password}
+        async with httpx.AsyncClient() as client:
+            r = await client.post(f"{self.url}/auth/v1/signup", json=payload, headers=headers, timeout=10.0)
+        # Return raw JSON so caller can decide how to handle (session, user, etc.).
+        return {"status_code": r.status_code, "json": r.json()}
+
+    async def sign_in(self, email: str, password: str) -> dict:
+        """Sign in a user via Supabase and return the token/session JSON.
+
+        Docs: POST /auth/v1/token?grant_type=password
+        """
+        if not self.url:
+            raise RuntimeError("Supabase URL not configured")
+        apikey = self.anon_key or self.service_role
+        if not apikey:
+            raise RuntimeError("Supabase API key not configured")
+
+        headers = {"apikey": apikey, "Content-Type": "application/json"}
+        payload = {"email": email, "password": password}
+        async with httpx.AsyncClient() as client:
+            r = await client.post(f"{self.url}/auth/v1/token?grant_type=password", json=payload, headers=headers, timeout=10.0)
+        return {"status_code": r.status_code, "json": r.json()}
+
     async def health_check(self) -> dict:
         """Basic health check for the Supabase URL. Returns a dict with status info.
 
