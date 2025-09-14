@@ -22,8 +22,8 @@ def get_cart(db: Session = Depends(get_db), user_id: int = Depends(_get_user_id_
     cart_id = row[0]
     items = db.execute(
         """
-        SELECT ci.id, ci.product_id, ci.quantity, ci.price_at_add, ci.metadata,
-               p.id AS p_id, p.name AS p_title, p.description AS p_description, p.price AS p_price
+     SELECT ci.id, ci.product_id, ci.quantity, ci.price_at_add, ci.metadata,
+         p.id AS p_id, p.product_name AS p_title, p.description AS p_description, p.current_price AS p_price, p.real_price AS p_real_price
         FROM public.cart_items ci
         LEFT JOIN public.products p ON p.id = ci.product_id
         WHERE ci.cart_id = %s
@@ -34,7 +34,15 @@ def get_cart(db: Session = Depends(get_db), user_id: int = Depends(_get_user_id_
     for it in items:
         product = None
         if it[5] is not None:
-            product = cart_schemas.ProductRead(id=it[5], title=it[6], description=it[7], price=float(it[8]))
+            # ProductRead schema expects product_name/real_price/current_price; cart uses ProductRead for nested product.
+            # We populate product_name from p_title and current_price from p_price (fallback to real_price if needed).
+            product = cart_schemas.ProductRead(
+                id=it[5],
+                product_name=it[6],
+                description=it[7],
+                current_price=float(it[8]) if it[8] is not None else (float(it[9]) if it[9] is not None else None),
+                real_price=(float(it[9]) if it[9] is not None else None),
+            )
         cart_items.append(cart_schemas.CartItemResponse(item_id=it[0], product_id=it[1], quantity=it[2], price_at_add=float(it[3]), metadata=it[4] or {}, product=product))
     return cart_schemas.Cart(cart_id=cart_id, owner_user_id=user_id, items=cart_items)
 
@@ -49,14 +57,21 @@ def add_cart_item(payload: cart_schemas.CartItemCreate, db: Session = Depends(ge
     else:
         cart_id = row[0]
     # get current price
-    prod = db.execute("SELECT id, title, description, price FROM public.products WHERE id=%s", (payload.product_id,)).fetchone()
+    prod = db.execute("SELECT id, product_name, description, current_price, real_price FROM public.products WHERE id=%s", (payload.product_id,)).fetchone()
     if not prod:
         raise HTTPException(status_code=404, detail="product not found")
-    price = prod[3]
+    # prefer current_price for cart price, fallback to real_price
+    price = prod[3] if prod[3] is not None else prod[4]
     # upsert into cart_items
     db.execute("INSERT INTO public.cart_items (cart_id,product_id,quantity,price_at_add,metadata) VALUES (%s,%s,%s,%s,%s) ON CONFLICT (cart_id,product_id) DO UPDATE SET quantity = public.cart_items.quantity + EXCLUDED.quantity", (cart_id,payload.product_id,payload.quantity,price, payload.metadata))
     db.commit()
     it = db.execute("SELECT id,product_id,quantity,price_at_add,metadata FROM public.cart_items WHERE cart_id=%s AND product_id=%s", (cart_id,payload.product_id)).fetchone()
-    product = cart_schemas.ProductRead(id=prod[0], title=prod[1], description=prod[2], price=float(prod[3]))
+    product = cart_schemas.ProductRead(
+        id=prod[0],
+        product_name=prod[1],
+        description=prod[2],
+        current_price=float(prod[3]) if prod[3] is not None else (float(prod[4]) if prod[4] is not None else None),
+        real_price=(float(prod[4]) if prod[4] is not None else None),
+    )
     return cart_schemas.CartItemResponse(item_id=it[0], product_id=it[1], quantity=it[2], price_at_add=float(it[3]), metadata=it[4] or {}, product=product)
 # Note: keep the router defined above; no adapter rebind necessary after migration
