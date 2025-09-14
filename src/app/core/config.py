@@ -21,5 +21,8 @@ class Settings:
     # When true, include the DB exception message in /health/db responses
     # for debugging. Should NOT be enabled in production long-term.
     DB_HEALTH_VERBOSE: bool = os.getenv("DB_HEALTH_VERBOSE", "false").lower() in ("1", "true", "yes")
+    # When true and SUPABASE_SERVICE_ROLE_KEY is provided, server will use the
+    # Supabase Admin API to create users as already-confirmed. Use with caution.
+    SUPABASE_AUTO_CONFIRM_SIGNUP: bool = os.getenv("SUPABASE_AUTO_CONFIRM_SIGNUP", "false").lower() in ("1", "true", "yes")
 
 settings = Settings()
