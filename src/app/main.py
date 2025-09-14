@@ -107,5 +107,7 @@ def health_db():
             db.close()
     except Exception as e:
         logger.warning("db.health_unreachable", error=str(e))
-        # Keep response lightweight and machine-readable
+        # Keep response lightweight and machine-readable by default
+        if settings.DB_HEALTH_VERBOSE:
+            return JSONResponse(status_code=503, content={"status": "unavailable", "db": "unreachable", "error": str(e)})
         return JSONResponse(status_code=503, content={"status": "unavailable", "db": "unreachable"})
