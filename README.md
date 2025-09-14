@@ -381,6 +381,71 @@ railway up
 ```
 </details>
 
+---
+
+## 🧭 Run & DB troubleshooting
+
+If your deployed web service starts but registration or other DB-backed endpoints return errors, use the following checks and recommendations.
+
+1. Quick health endpoints
+
+- Lightweight process health (no DB access):
+
+  GET /health
+
+  - Returns 200 {"status":"ok"} when the process is running. This intentionally avoids touching the DB so the process can be considered alive even if the database is unreachable.
+
+- Database connectivity check (minimal):
+
+  GET /health/db
+
+  - Returns 200 {"status":"ok","db":"reachable"} when a simple SQL `SELECT 1` succeeds.
+  - Returns 503 {"status":"unavailable","db":"unreachable"} when the DB is not reachable.
+
+2. Typical failure and quick interpretation
+
+- If `/health` is 200 but `/health/db` is 503 and DB-backed endpoints (e.g. `/api/auth/register`) return 503 or 500, the web service cannot open a TCP connection to your database. The error in logs usually looks like `psycopg2.OperationalError: ... Network is unreachable`.
+
+- Possible causes:
+  - Wrong `DATABASE_URL` or credentials.
+  - Network ACLs / firewall / VPC rules that prevent the Render instance from reaching the DB host.
+  - The DB service is down or not accepting connections on the configured host/port.
+
+3. How to debug from Render (recommended)
+
+- Use a one-off shell on Render (or a Render Job) in the same region/network as your web service and try a minimal connect from there. For example, run a short Python snippet or `psql` to validate connectivity.
+
+- If your DB is hosted on Supabase and you see `Network is unreachable`, check whether Supabase requires allowlisting or private networking and whether Render's outbound IP ranges are allowed.
+
+4. Migrations: where to run them
+
+- Prefer running migrations separately from the web workers. Options:
+  - Render Job / one-off: create a Render Job (or a one-off shell) that runs `alembic upgrade head` in the same network as the DB. This is reliable when the Render environment can access the database.
+  - Self-hosted CI runner: run migrations from a self-hosted runner (GitHub Actions self-hosted) that has network access to your DB.
+  - Manual: run migrations locally from a machine that can reach the DB (less automated but simple).
+
+- Don't run `Base.metadata.create_all()` on web startup in production; use migrations instead. This project already supports skipping DB init at startup via the `SKIP_DB_INIT` env var.
+
+5. Quick commands
+
+Run the DB health check (from anywhere):
+
+```bash
+# Lightweight health (process):
+curl -i https://<your-host>/health
+
+# DB reachability check (from the same network as the service):
+curl -i https://<your-host>/health/db
+```
+
+Run migrations (example; ensure `DATABASE_URL` is set and reachable):
+
+```bash
+# from project root
+alembic upgrade head
+```
+
+
 <details>
 <summary><strong>🟦 Vercel</strong></summary>
 
